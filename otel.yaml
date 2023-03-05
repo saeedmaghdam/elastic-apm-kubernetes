@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otelcol
+  namespace: elastic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otelcol
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otelcol
+    spec:
+      containers:
+      - name: otelcol
+        args:
+        - --config=/etc/otelcol/config.yaml
+        image: otel/opentelemetry-collector:0.71.0
+        resources:
+          limits:
+            cpu: 1
+            memory: 4Gi
+          requests:
+            cpu: 500m
+            memory: 2Gi
+        volumeMounts:
+        - name: otelcol-config-volume
+          mountPath: /etc/otelcol/config.yaml
+          subPath: config.yaml
+      volumes:
+      - name: otelcol-config-volume
+        configMap:
+          name: otelcol-config
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otelcol-config
+  namespace: elastic
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+
+    processors:
+      batch:
+
+    exporters:
+      logging:
+
+      otlphttp:
+        endpoint: "{FQDN}"
+        headers:
+          Authorization: "ApiKey {API_KEY}"
+        compression: none
+
+    extensions:
+      health_check:
+      pprof:
+      zpages:
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging, otlphttp]
+          
+        logs:
+          receivers: [otlp]
+          processors: [batch]
+          exporters: [logging, otlphttp]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otelcol-service
+  namespace: elastic
+spec:
+  selector:
+    app.kubernetes.io/name: otelcol
+  ports:
+    - protocol: TCP
+      port: 4317
+      targetPort: 4317

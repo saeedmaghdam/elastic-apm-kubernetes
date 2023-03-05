@@ -11,6 +11,7 @@
 - [kibana-ingress.yaml](./kibana-ingress.yaml)
 - [elasticsearch-ingress.yaml](./elasticsearch-ingress.yaml)
 - [apm-ingress.yaml](./apm-ingress.yaml)
+- [otel.yaml](./otel.yaml)
 
 ## Reference
 [Deploy ECK in your Kubernetes cluster](https://www.elastic.co/guide/en/cloud-on-k8s/current/k8s-deploy-eck.html) 
